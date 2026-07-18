@@ -123,6 +123,10 @@ add:
 3. Open the Firebase console's Firestore/Storage tabs to watch the data land in
    real time — this is a great thing to screen-record for a portfolio/demo.
 
+## ScreenShot of the app
+   <img width="1179" height="2556" alt="screenshot" src="https://github.com/user-attachments/assets/6f8af5ac-ccae-429e-b8ea-72c690dea7d9" />
+
+
 ## Notes for extending it further
 
 - Add pull-to-refresh with `.refreshable {}` on the ScrollView.
