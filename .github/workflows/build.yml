@@ -12,6 +12,15 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
 
+      - name: Select latest available Xcode
+        run: |
+          echo "Available Xcode versions:"
+          ls -d /Applications/Xcode*.app
+          LATEST_XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -n 1)
+          echo "Selecting: $LATEST_XCODE"
+          sudo xcode-select -s "$LATEST_XCODE"
+          xcodebuild -version
+
       - name: Decode Firebase config from secret
         run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST_BASE64 }}" | base64 --decode > GoogleService-Info.plist
 
@@ -35,15 +44,6 @@ jobs:
             exit 1
           fi
 
-      - name: Select latest available Xcode
-        run: |
-          echo "Available Xcode versions:"
-          ls -d /Applications/Xcode*.app
-          LATEST_XCODE=$(ls -d /Applications/Xcode_*.app | sort -V | tail -n 1)
-          echo "Selecting: $LATEST_XCODE"
-          sudo xcode-select -s "$LATEST_XCODE"
-          xcodebuild -version
-
       - name: Resolve Swift package dependencies
         run: |
           xcodebuild -resolvePackageDependencies \
@@ -56,3 +56,37 @@ jobs:
             -scheme MarketplaceApp \
             -destination 'platform=iOS Simulator,name=iPhone 15,OS=17.5' \
             build
+
+      - name: Boot Simulator and launch app
+        run: |
+          UDID=$(python3 -c "
+          import json, subprocess
+          data = json.loads(subprocess.check_output(['xcrun','simctl','list','devices','available','-j']))
+          for runtime, devices in data['devices'].items():
+              if '17-5' in runtime:
+                  for d in devices:
+                      if d['name'] == 'iPhone 15':
+                          print(d['udid'])
+                          break
+          ")
+          echo "Using simulator UDID: $UDID"
+
+          xcrun simctl boot "$UDID" || true
+          sleep 10
+
+          APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "MarketplaceApp.app" -path "*iphonesimulator*" | head -1)
+          echo "App path: $APP_PATH"
+
+          xcrun simctl install "$UDID" "$APP_PATH"
+          xcrun simctl launch "$UDID" com.company.marketplace
+          sleep 5
+
+          xcrun simctl io "$UDID" screenshot screenshot.png
+        continue-on-error: true
+
+      - name: Upload screenshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshot
+          path: screenshot.png
+          if-no-files-found: warn
