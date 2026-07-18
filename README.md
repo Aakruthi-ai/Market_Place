@@ -1,5 +1,7 @@
 # Marketplace — SwiftUI + Firebase Buy & Sell App
 
+![Build Status](https://github.com/Aakruthi-ai/Market_Place/actions/workflows/build.yml/badge.svg)
+
 A small secondhand marketplace app: users sign up, browse listings, filter/search,
 post items with a photo, and view/delete their own listings. Built to demonstrate
 Swift, SwiftUI, backend/API integration, and real-time data — the core skills
